@@ -1,0 +1,5 @@
+---
+- fail: 
+    msg: "Whoops! This is not an Archlinux."
+  when: 
+    - ansible_distribution != 'Archlinux' 

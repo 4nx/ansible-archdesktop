@@ -1,0 +1,98 @@
+---
+- name: spacevim | Check if SpaceVim already exists
+  become: yes
+  become_user: "{{ main_user }}"
+  stat:
+    path: "{{ main_user_home }}/.SpaceVim"
+  register: registered_spacevim
+
+- name: spacevim | Download SpaceVim install script
+  become: yes
+  become_user: "{{ main_user }}"
+  get_url:
+    url: https://spacevim.org/install.sh
+    dest: "{{ main_user_home }}/spacevim_install.sh"
+    mode: '0750'
+    checksum: 'sha256:01898d24c33596bd6887ea0fbd0dbaf27c968c106fa444a4f11cae0051a29124'
+  when:
+    - registered_spacevim.stat.exists == False
+
+- name: spacevim | Install SpaceVim
+  become: yes
+  become_user: "{{ main_user }}"
+  shell: "{{ main_user_home }}/spacevim_install.sh"
+  args:
+    chdir: "{{ main_user_home }}"
+    creates: .SpaceVim
+    executable: /bin/bash
+
+- name: spacevim | Remove SpaceVim install script
+  become: yes
+  become_user: "{{ main_user }}"
+  file:
+    path: "{{ main_user_home }}/spacevim_install.sh"
+    state: absent
+
+- name: spacevim | Check if init.toml already exists
+  become: yes
+  become_user: "{{ main_user }}"
+  stat:
+    path: "{{ main_user_home }}/.SpaceVim.d/init.toml"
+  register: registered_init_toml
+
+- name: spacevim | Create SpaceVim.d directory
+  become: yes
+  become_user: "{{ main_user }}"
+  file:
+    path: "{{ main_user_home }}/.SpaceVim.d"
+    state: directory
+  when:
+    - registered_init_toml.stat.exists == False
+
+- name: spacevim | Copy SpaceVim init.toml to destination
+  become: yes
+  become_user: "{{ main_user }}"
+  template:
+    src: SpaceVim.d/init.toml.j2
+    dest: "{{ main_user_home }}/.SpaceVim.d/init.toml"
+    mode: '0640'
+  when:
+    - registered_init_toml.stat.exists == False
+
+- name: spacevim | Set SpaceVim colorscheme option
+  become: yes
+  become_user: "{{ main_user }}"
+  lineinfile:
+    path: "{{ main_user_home }}/.SpaceVim.d/init.toml"
+    regexp: '^.*colorscheme = '
+    line: '    colorscheme = "{{ spacevim_colorscheme }}"'
+
+- name: spacevim | Add SpaceVim colorscheme layer
+  become: yes
+  become_user: "{{ main_user }}"
+  blockinfile:
+    path: "{{ main_user_home }}/.SpaceVim.d/init.toml"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK"
+    block: |
+      [[layers]]
+          name = "colorscheme"
+
+- name: spacevim | Set SpaceVim file tree direction
+  become: yes
+  become_user: "{{ main_user }}"
+  lineinfile:
+    path: "{{ main_user_home }}/.SpaceVim.d/init.toml"
+    regexp: '\s\s\s\sfiletree_direction = \"'
+    insertafter: '\[options\]'
+    line: '    filetree_direction = "{{ spacevim_filetree_direction }}"'
+  when:
+    - spacevim_filetree_direction is defined
+
+- name: spacevim | Update SpaceVim
+  become: yes
+  become_user: "{{ main_user }}"
+  git:
+    repo: https://github.com/SpaceVim/SpaceVim.git
+    dest: "{{ main_user_home }}/.SpaceVim"
+    clone: no
+    update: yes

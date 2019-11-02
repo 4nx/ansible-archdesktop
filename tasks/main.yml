@@ -1,0 +1,45 @@
+---
+- include: check_requirements.yml
+
+- include: set_facts.yml
+  tags: always
+
+- include: timezone.yml
+  tags: timezone
+
+- include: packages.yml
+  tags: packages
+
+- include: aur.yml
+  tags: aur
+
+- include: spacevim.yml
+  tags: spacevim
+  when:
+    - spacevim_install == True
+
+- include: ohmyzsh.yml
+  tags: ohmyzsh
+  when:
+    - ohmyzsh_install == True
+
+- include: config_ssh.yml
+  tags: config_ssh
+  when:
+    - ssh_config == True
+
+- include: bullet_train.yml
+  tags: bullet_train
+  when:
+    - ohmyzsh_install == True
+    - bullettrain_install == True
+
+- include: config_i3.yml
+  tags: config_i3
+  when:
+    - i3_config == True
+
+- include: ohmytmux.yml
+  tags: ohmytmux
+  when:
+    - ohmytmux_install == True

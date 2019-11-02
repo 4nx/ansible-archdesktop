@@ -1,0 +1,5 @@
+---
+- name: "[osquery] | Check if osquery is already installed"
+  stat:
+    "{{ osquery_config_path }}"
+  register: result_osquery_installed

@@ -1,0 +1,79 @@
+---
+- name: ohmyzsh | Check if oh-my-zsh already exists
+  become: yes
+  become_user: "{{ main_user }}"
+  stat:
+    path: "{{ main_user_home }}/.oh-my-zsh"
+  register: registered_zsh
+
+- name: ohmyzsh | Download oh-my-zsh install script
+  become: yes
+  become_user: "{{ main_user }}"
+  get_url:
+    url: https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh
+    dest: "{{ main_user_home }}/ohmyzsh_install.sh"
+    mode: '0750'
+    checksum: "sha256:12eee69c964c982672364c1e1978580c11d4b2859e5352cda608ba0e3c64100a"
+  when:
+    - registered_zsh.stat.exists == False
+
+- name: ohmyzsh | Install oh-my-zsh
+  become: yes
+  become_user: "{{ main_user }}"
+  shell: "{{ main_user_home }}/ohmyzsh_install.sh --unattended"
+  args:
+    chdir: "{{ main_user_home }}"
+    creates: .oh-my-zsh
+
+- name: ohmyzsh | Remove oh-my-zsh install script
+  become: yes
+  become_user: "{{ main_user }}"
+  file:
+    path: "{{ main_user_home }}/ohmyzsh_install.sh"
+    state: absent
+
+- name: ohmyzsh | Set default shell to ZSH for main user "{{ main_user }}"
+  become: yes
+  command: "chsh -s /usr/bin/zsh {{ main_user }}"
+  when:
+    - main_user_shell != "/usr/bin/zsh"
+
+- name: ohmyzsh | Disable shared history between terminals
+  become: yes
+  become_user: "{{ main_user }}"
+  lineinfile:
+    path: "{{ main_user_home }}/.zshrc"
+    regexp: '^unsetopt SHARE_HISTORY'
+    line: 'unsetopt SHARE_HISTORY'
+  when:
+    - ohmyzsh_shared_history == False
+
+- name: ohmyzsh | Enable shared history between terminals
+  become: yes
+  become_user: "{{ main_user }}"
+  lineinfile:
+    path: "{{ main_user_home }}/.zshrc"
+    regexp: '^unsetopt SHARE_HISTORY'
+    line: 'unsetopt SHARE_HISTORY'
+    state: absent
+  when:
+    - ohmyzsh_shared_history == True
+
+- name: ohmyzsh | Enable ohmyzsh plugins
+  become: yes
+  become_user: "{{ main_user }}"
+  lineinfile:
+    path: "{{ main_user_home }}/.zshrc"
+    regexp: '^plugins=\('
+    line: "plugins=({{ ohmyzsh_plugins }})"
+
+- name: ohmyzsh | Set aliases for ansible in docker
+  become: yes
+  become_user: "{{ main_user }}"
+  blockinfile:
+    path: "{{ main_user_home }}/.zshrc"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK}"
+    block: |
+      alias ansible="docker run -it -v $SSH_AUTH_SOCK:/tmp/ssh.sck -e SSH_AUTH_SOCK=/tmp/ssh.sck -v /home/{{ main_user }}/git/ansible:/etc/ansible --rm=true 4nxio/ansible-docker ansible --vault-password-file=keys/.vault_pass"
+      alias ansible-playbook="docker run -it -v $SSH_AUTH_SOCK:/tmp/ssh.sck -e SSH_AUTH_SOCK=/tmp/ssh.sck -v /home/{{ main_user }}/git/ansible:/etc/ansible --rm=true 4nxio/ansible-docker ansible-playbook --vault-password-file=keys/.vault_pass"
+      alias ansible-vault="docker run -it -v $SSH_AUTH_SOCK:/tmp/ssh.sck -e SSH_AUTH_SOCK=/tmp/ssh.sck -v /home/{{ main_user }}/git/ansible:/etc/ansible --rm=true 4nxio/ansible-docker ansible-vault --vault-password-file=keys/.vault_pass"

@@ -1,0 +1,252 @@
+---
+- name: config_i3 | Hide ansible user on login screen
+  become: yes
+  blockinfile:
+    path: /var/lib/AccountsService/users/ansible
+    create: yes
+    owner: root
+    group: root
+    mode: '0600'
+    marker: "# {mark} ANSIBLE MANAGED BLOCK"
+    block: |
+      [User]
+      SystemAccount=true
+
+- name: config_i3 | Create lxterminal config directory
+  become: yes
+  become_user: "{{ main_user }}"
+  file:
+    path: "{{ main_user_home }}/.config/lxterminal"
+    state: directory
+    owner: "{{ main_user }}"
+    group: "{{ main_user }}"
+    mode: '0750'
+
+- name: config_i3 | Copy lxterminal configuration
+  become: yes
+  become_user: "{{ main_user }}"
+  template:
+    src: lxterminal.conf
+    dest: "{{ main_user_home }}/.config/lxterminal/lxterminal.conf"
+    mode: '0640'
+
+- name: config_i3 | Set xterm face name in .Xresources
+  become: yes
+  become_user: "{{ main_user }}"
+  lineinfile:
+    path: "{{ main_user_home }}/.Xresources"
+    regexp: '^XTerm\*faceName: '
+    line: "XTerm*faceName:          {{ xterm_face_name }}:antialias=true"
+
+- name: config_i3 | Set xterm face size in .Xresources
+  become: yes
+  become_user: "{{ main_user }}"
+  lineinfile:
+    path: "{{ main_user_home }}/.Xresources"
+    regexp: '^XTerm\*faceSize: '
+    line: "XTerm*faceSize:          {{ xterm_face_size }}"
+
+- name: config_i3 | Set xterm reverse video
+  become: yes
+  become_user: "{{ main_user }}"
+  lineinfile:
+    path: "{{ main_user_home }}/.Xresources"
+    regexp: '^XTerm\*reverseVideo: '
+    line: 'XTerm*reverseVideo:      off'
+
+- name: config_i3 | Set lxterminal as default terminal
+  become: yes
+  become_user: "{{ main_user }}"
+  lineinfile:
+    path: "{{ i3_config_path }}"
+    regexp: '^bindsym \$mod\+Return '
+    line: 'bindsym $mod+Return exec --no-startup-id lxterminal'
+  #notify:
+  #  - reload i3
+
+- name: config_i3 | Set default browser for mod+F2 shortcut
+  become: yes
+  become_user: "{{ main_user }}"
+  lineinfile:
+    path: "{{ i3_config_path }}"
+    regexp: '^bindsym \$mod\+F2 '
+    line: "bindsym $mod+F2 exec {{ default_browser }}"
+  when:
+    - default_browser is defined
+
+- name: config_i3 | Change standard shortcut for pkill compton
+  become: yes
+  become_user: "{{ main_user }}"
+  lineinfile:
+    path: "{{ i3_config_path }}"
+    regexp: '^bindsym.*exec --no-startup-id pkill compton'
+    line: 'bindsym $mod+Shift+t exec --no-startup-id pkill compton'
+    state: absent
+
+- name: config_i3 | Change standard shortcut for stacking layout
+  become: yes
+  become_user: "{{ main_user }}"
+  lineinfile:
+    path: "{{ i3_config_path }}"
+    regexp: '^bindsym.*layout stacking'
+    line: 'bindsym $mod+e layout stacking'
+
+- name: config_i3 | Change standard shortcut for tabbed layout
+  become: yes
+  become_user: "{{ main_user }}"
+  lineinfile:
+    path: "{{ i3_config_path }}"
+    regexp: '^bindsym.*layout tabbed'
+    line: 'bindsym $mod+t layout tabbed'
+
+- name: config_i3 | Change standard shortcut for toggle split layout
+  become: yes
+  become_user: "{{ main_user }}"
+  lineinfile:
+    path: "{{ i3_config_path }}"
+    regexp: '^bindsym.*layout toggle split'
+    line: 'bindsym $mod+s layout toggle split'
+
+- name: config_i3 | Disable shortcut for blurlock
+  become: yes
+  become_user: "{{ main_user }}"
+  lineinfile:
+    path: "{{ i3_config_path }}"
+    regexp: 'bindsym \$mod\+9 exec --no-startup-id blurlock'
+    line: '#bindsym $mod+9 exec --no-startup-id blurlock'
+
+- name: config_i3 | Enable shortcut for i3lock with black screen
+  become: yes
+  become_user: "{{ main_user }}"
+  lineinfile:
+    path: "{{ i3_config_path }}"
+    regexp: '^bindsym \$mod\+l exec --no-startup-id i3lock -f -e -c 000000'
+    line: 'bindsym $mod+l exec --no-startup-id i3lock -f -e -c 000000'
+    insertafter: '^#bindsym \$mod\+9 exec --no-startup-id blurlock'
+
+- name: config_i3 | Disable xautolock with blurlock
+  become: yes
+  become_user: "{{ main_user }}"
+  lineinfile:
+    path: "{{ i3_config_path }}"
+    regexp: 'exec.*xautolock -time 10 -locker blurlock' 
+    line: '#exec --no-startup-id xautolock -time 10 -locker blurlock' 
+
+- name: config_i3 | Enable xautolock with i3lock with black screen
+  become: yes
+  become_user: "{{ main_user }}"
+  lineinfile:
+    path: "{{ i3_config_path }}"
+    regexp: 'exec.*xautolock -time 10 -locker "i3lock -f -e -c 000000"' 
+    line: 'exec --no-startup-id xautolock -time 10 -locker "i3lock -f -e -c 000000"'
+    insertafter: '^#exec.*xautolock -time 10 -locker blurlock'
+
+- name: config_i3 | Disable change focus left
+  become: yes
+  become_user: "{{ main_user }}"
+  lineinfile:
+    path: "{{ i3_config_path }}"
+    regexp: 'bindsym.*\+j focus left'
+    line: '#bindsym $mod+j focus left'
+
+- name: config_i3 | Disable change focus down
+  become: yes
+  become_user: "{{ main_user }}"
+  lineinfile:
+    path: "{{ i3_config_path }}"
+    regexp: 'bindsym.*\+k focus down'
+    line: '#bindsym $mod+k focus down'
+
+- name: config_i3 | Disable change focus up
+  become: yes
+  become_user: "{{ main_user }}"
+  lineinfile:
+    path: "{{ i3_config_path }}"
+    regexp: 'bindsym.*\+l focus up'
+    line: '#bindsym $mod+l focus up'
+
+- name: config_i3 | Disable change focus right
+  become: yes
+  become_user: "{{ main_user }}"
+  lineinfile:
+    path: "{{ i3_config_path }}"
+    regexp: 'bindsym.*\+semicolon focus right'
+    line: '#bindsym $mod+semicolon focus right'
+
+- name: config_i3 | Change shortcut for resize
+  become: yes
+  become_user: "{{ main_user }}"
+  lineinfile:
+    path: "{{ i3_config_path }}"
+    regexp: '^bindsym.*mode\s"resize"'
+    line: 'bindsym $mod+Ctrl+r mode "resize"'
+
+- name: config_i3 | Create user bin path
+  become: yes
+  become_user: "{{ main_user }}"
+  file:
+    path: "{{ user_bin_path }}"
+    state: directory
+    owner: "{{ main_user }}"
+    group: "{{ main_user }}"
+    mode: '0750'
+
+- name: config_i3 | Add rofi shortcuts
+  become: yes
+  become_user: "{{ main_user }}"
+  blockinfile:
+    path: "{{ i3_config_path }}"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK"
+    block: |
+      bindsym $mod+r exec "/usr/bin/rofi -combi-mode -mode run,ssh,drun,combi -theme paper-float -show run"
+      bindsym $mod+Ctrl+s exec "/usr/bin/rofi -combi-mode -mode run,ssh,drun,combi -theme paper-float -show ssh"
+
+- name: config_i3 | Pulseaudio disable volumeicon
+  become: yes
+  become_user: "{{ main_user }}"
+  lineinfile:
+    path: "{{ i3_config_path }}"
+    regexp: '^#?exec --no-startup-id volumeicon'
+    line: '#exec --no-startup-id volumeicon'
+  when:
+    - pulseaudio_install == True
+
+- name: config_i3 | Pulseaudio disable alsamixer
+  become: yes
+  become_user: "{{ main_user }}"
+  lineinfile:
+    path: "{{ i3_config_path }}"
+    regexp: '^#?bindsym.*alsamixer'
+    line: "#bindsym $mod+Ctrl+m exec terminal -e 'alsamixer'"
+  when:
+    - pulseaudio_install == True
+
+- name: config_i3 | Pulseaudio enable startup
+  become: yes
+  become_user: "{{ main_user }}"
+  lineinfile:
+    path: "{{ i3_config_path }}"
+    regexp: '^#?exec --no-startup-id.*pulseaudio'
+    line: 'exec --no-startup-id start-pulseaudio-x11'
+  when:
+    - pulseaudio_install == True
+
+- name: config_i3 | Pulseaudio enable pa-applet
+  become: yes
+  become_user: "{{ main_user }}"
+  lineinfile:
+    path: "{{ i3_config_path }}"
+    regexp: '^#?exec --no-startup-id.*pa-applet'
+    line: 'exec --no-startup-id pa-applet'
+  when:
+    - pulseaudio_install == True
+
+- name: config_i3 | Pulseaudio bind pavucontrol
+  become: yes
+  become_user: "{{ main_user }}"
+  lineinfile:
+    path: "{{ i3_config_path }}"
+    regexp: '^#?bindsym.*exec\spavucontrol'
+    line: 'bindsym $mod+Ctrl+m exec pavucontrol'
+  when:
+    - pulseaudio_install == True

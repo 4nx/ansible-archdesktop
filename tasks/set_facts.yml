@@ -1,0 +1,48 @@
+---
+# It is not possible to use the 'getent' module because you need nested
+# variables in other variable to access it e.g.: getent[{{ user }}][4]
+# which you can not use to give it to a new set_fact variable.
+- name: set_facts | Get main users home directory
+  shell: "getent passwd {{ main_user }} | cut -d : -f 6"
+  changed_when: false
+  register: registered_home_dir
+
+- name: set_facts | Set main users home directory to variable
+  set_fact:
+    main_user_home: "{{ registered_home_dir.stdout }}"
+
+- name: set_facts | Get main users shell
+  shell: "getent passwd {{ main_user }} | cut -d : -f7"
+  changed_when: false
+  register: registered_user_shell
+
+- name: set_facts | Set main users shell to variable
+  set_fact:
+    main_user_shell: "{{ registered_user_shell.stdout }}"
+
+- name: set_facts | Get i3 config path
+  become: yes
+  become_user: "{{ main_user }}"
+  stat:
+    path: "{{ main_user_home }}/.i3/config"
+  register: registered_i3_config
+  when:
+    - i3_config == True
+
+- name: set_facts | Set i3 config path to home dir
+  set_fact:
+    i3_config_path: "{{ main_user_home }}/.i3/config"
+  when:
+    - i3_config == True
+    - registered_i3_config.stat.exists == True
+
+- name: set_facts | Set i3 config path to /etc
+  set_fact:
+    i3_config_path: "/etc/i3/config"
+  when:
+    - i3_config == True
+    - registered_i3_config.stat.exists == False
+
+- name: set_facts | Set user bin path
+  set_fact:
+    user_bin_path: "{{ main_user_home}}/bin"

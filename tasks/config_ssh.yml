@@ -1,0 +1,16 @@
+---
+- name: config_ssh | Activate ssh-agent in bashrc
+  become: yes
+  become_user: "{{ main_user }}"
+  blockinfile:
+    path: "{{ main_user_home }}/.bashrc"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK"
+    block: |
+      if ! pgrep -u "$USER" ssh-agent > /dev/null; then
+          ssh-agent > "$XDG_RUNTIME_DIR/ssh-agent.env"
+      fi
+      if [[ ! "$SSH_AUTH_SOCK" ]]; then
+          eval "$(<"$XDG_RUNTIME_DIR/ssh-agent.env")"
+      fi
+  when:
+    - ssh_agent_enable == True

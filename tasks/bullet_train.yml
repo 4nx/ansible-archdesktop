@@ -1,0 +1,26 @@
+---
+- name: bullet_train | Check if Bullet Train already exists
+  become: yes
+  become_user: "{{ main_user }}"
+  stat:
+    path: "{{ main_user_home }}/{{ bullettrain_path }}"
+  register: registered_bullettrain
+  
+- name: bullet_train | Download Bullet Train theme file
+  become: yes
+  become_user: "{{ main_user }}"
+  get_url:
+    url: https://raw.githubusercontent.com/caiogondim/bullet-train-oh-my-zsh-theme/master/bullet-train.zsh-theme
+    dest: "{{ main_user_home }}//{{ bullettrain_path }}"
+    mode: '0640'
+    checksum: 'sha256:47bec063f08f508fb5f546f257ba3c52ce49fae4057de6f3256cb92675f384d4'
+  when:
+    - registered_bullettrain.stat.exists == False
+
+- name: bullet_train | Enable Bullet Train as default oh-my-zsh theme
+  become: yes
+  become_user: "{{ main_user }}"
+  lineinfile:
+    path: "{{ main_user_home }}/.zshrc"
+    regexp: '^ZSH_THEME="'
+    line: 'ZSH_THEME="bullet-train"'

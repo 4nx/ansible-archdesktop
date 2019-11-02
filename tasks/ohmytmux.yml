@@ -1,0 +1,25 @@
+---
+- name: ohmytmux | Clone or update oh-my-tmux git repository
+  become: yes
+  become_user: "{{ main_user }}"
+  git:
+    repo: https://github.com/gpakosz/.tmux.git
+    dest: "{{ main_user_home }}/.tmux"
+    update: yes
+
+- name: ohmytmux | Create symlink to .tmux.conf
+  become: yes
+  become_user: "{{ main_user }}"
+  file:
+    src: "{{ main_user_home }}/.tmux/.tmux.conf"
+    dest: "{{ main_user_home }}/.tmux.conf"
+    state: link
+
+- name: ohmytmux | Copy .tmux.conf.local
+  become: yes
+  become_user: "{{ main_user }}"
+  copy:
+    src: "{{ main_user_home }}/.tmux/.tmux.conf.local"
+    dest: "{{ main_user_home }}"
+    remote_src: yes
+

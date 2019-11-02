@@ -1,0 +1,26 @@
+---
+- name: packages | Update current installed packages
+  become: true
+  pacman:
+    update_cache: yes
+    upgrade: yes
+
+- name: packages | Install all required packages from repositories
+  become: true
+  pacman:
+    name: "{{ repository_packages }}"
+    state: present
+  when:
+    - repository_packages is defined
+
+- name: packages | Install pulseaudio packages
+  become: true
+  pacman:
+    name:
+      - manjaro-pulse
+      - pa-applet
+      - pavucontrol
+      - pulseaudio-bluetooth
+    state: present
+  when:
+    - pulseaudio_install == True

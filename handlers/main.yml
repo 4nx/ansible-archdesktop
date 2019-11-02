@@ -1,0 +1,5 @@
+---
+- name: reload i3
+  become: yes
+  become_user: "{{ main_user }}"
+  shell: i3-msg reload

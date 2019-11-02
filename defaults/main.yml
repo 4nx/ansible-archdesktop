@@ -1,0 +1,81 @@
+### GENERAL STUFF ###
+# The main user of the desktop system must be defined
+main_user: "foo"
+
+# Define the default browser for the system. It will be e.g. set on default
+# shortcuts within i3.
+default_browser: "brave"
+
+# Timezone and current hardware clock setting
+hwclock: "UTC"                      # define whether the hardware clock is UTC or local
+timezone: "Europe/Berlin"           # define the timezone which should be set
+
+# All needed packages are defined here
+repository_packages:
+  - bind-tools
+  - brave
+  - docker
+  - docker-compose
+  - gradle
+  - jdk-openjdk
+  - lxterminal
+  - nmap
+  - rofi
+  - tmux
+  - ttf-fantasque-sans-mono
+  - unzip
+
+# Define needed AUR packages
+arch_aur_packages:
+  - ttf-ancient-fonts
+  - ghidra
+
+# AUR download path
+arch_aur_path: ".aur"
+
+git_repositories:
+  - ''
+
+### Pulseaudio ###
+# Install pulseaudio
+pulseaudio_install: True
+
+### SSH ###
+# Config ssh client and server stuff as well as ssh-agent
+ssh_config: True
+ssh_agent_enable: True
+
+### SpaceVim ###
+# Installation and configuration of SpaceVim: https://spacevim.org
+spacevim_install: True
+spacevim_colorscheme: "onedark"
+spacevim_filetree_direction: "left"
+
+### oh-my-zsh ###
+# Installation and configuration of oh-my-zsh: https://github.com/robbyrussell/oh-my-zsh
+ohmyzsh_install: True
+ohmyzsh_zsh_custom: ".oh-my-zsh"
+# If this option is set to true the terminal history will be shared between
+# terminals.
+ohmyzsh_shared_history: False
+# Define all plugins which should be enabled in oh-my-zsh
+ohmyzsh_plugins: "git ssh-agent sudo"
+
+### Bullet Train ###
+# Installation and configuration of Bullet Train for oh-my-zsh: https://github.com/caiogondim/bullet-train.zsh
+# ATTENTION: oh-my-zsh must be installed to use Bullet Train
+bullettrain_install: True
+bullettrain_path: "{{ ohmyzsh_zsh_custom }}/themes/bullet-train.zsh-theme"
+
+### i3 Config
+# Configuration of i3 is defined here
+i3_config: True
+# Set the urxvt terminal font
+# ATTENTION: Might need to be installed to the system first if it not exists
+i3_terminal_font: "Fantasque Sans Mono-12"
+xterm_face_name: "Fantasque Sans Mono"
+xterm_face_size: 12
+
+### Oh my tmux ###
+# Installaton of Oh my tmux: https://github.com/gpakosz/.tmux
+ohmytmux_install: True

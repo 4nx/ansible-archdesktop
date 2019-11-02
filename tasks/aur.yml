@@ -1,0 +1,51 @@
+---
+- name: aur | Create AUR dir if it not exists
+  become: yes
+  become_user: "{{ main_user }}"
+  file:
+    path: "{{ main_user_home }}/{{ arch_aur_path }}"
+    state: directory
+    mode: '0700'
+
+- name: aur | Clone all AUR packages
+  become: yes
+  become_user: "{{ main_user }}"
+  git:
+    repo: 'https://aur.archlinux.org/{{ item }}.git'
+    dest: "{{ main_user_home }}/{{ arch_aur_path }}/{{ item }}"
+  with_items:
+    - "{{ arch_aur_packages }}"
+
+- name: aur | Build all AUR packages
+  become: yes
+  become_user: "{{ main_user }}"
+  ignore_errors: yes
+  #shell: "{{ main_user_home }}/{{ arch_aur_path }}/{{ item }} && makepkg -si"
+  shell: "makepkg -s"
+  args:
+    chdir: "{{ main_user_home }}/{{ arch_aur_path }}/{{ item }}"
+  with_items:
+    - "{{ arch_aur_packages }}"
+
+- name: aur | Get all AUR packages which need be installed
+  become: yes
+  become_user: "{{ main_user }}"
+  find:
+    path: "{{ main_user_home }}/{{ arch_aur_path }}/{{ item }}"
+    patterns: '*-any.pkg.tar.xz,*-x86_64.pkg.tar.xz'
+    recurse: no
+  register: registered_aur_packages
+  with_items:
+    - "{{ arch_aur_packages }}"
+
+- debug:
+    var: "{{ registered_aur_packages }}"
+
+- name: aur | Install all AUR packages
+  become: yes
+  pacman:
+    name: "{{ item.1.path }}"
+    state: present
+  with_subelements:
+    - "{{ registered_aur_packages.results }}"
+    - files
